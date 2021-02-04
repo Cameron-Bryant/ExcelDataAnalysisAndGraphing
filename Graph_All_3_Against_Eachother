@@ -1,0 +1,77 @@
+import xlsxwriter
+import xlrd
+import matplotlib.pyplot as plt
+from datetime import date, datetime
+#find locs of the data
+wc40_hourly_loc = ("C://Users//camer//Downloads//WC40_Temp_HourlyR_2020.xls")
+wc40_daily_loc = ("C://Users//camer//Downloads//WC40_Temp_DailyR.xls")
+wc45_hourly_loc = ("C://Users//camer//Downloads//WC45_Temp_HourlyR_2020.xls")
+wc45_daily_loc = ("C://Users//camer//Downloads//WC45_Temp_DailyR.xls")
+wc60_hourly_loc = ("C://Users//camer//Downloads//WC60_Temp_HourlyR_2020.xls")
+wc60_daily_loc = ("C://Users//camer//Downloads//WC60_Temp_DailyR.xls")
+
+#get data from locs
+wb40_hourly = xlrd.open_workbook(wc40_hourly_loc)
+wb40_hourly_sheet = wb40_hourly.sheet_by_index(0)
+wb45_hourly = xlrd.open_workbook(wc45_hourly_loc)
+wb45_hourly_sheet = wb45_hourly.sheet_by_index(0)
+wb60_hourly = xlrd.open_workbook(wc60_hourly_loc)
+wb60_hourly_sheet = wb60_hourly.sheet_by_index(0)
+print("getting data")
+#make graph in new excel file
+#make new file to put data and graph into
+workbook = xlsxwriter.Workbook("WC-40-Hourly-Chart.xlsx")
+worksheet = workbook.add_worksheet()
+datasheet = workbook.add_worksheet()
+#format to convert the numbers to dates and times. (month/day/year hour:mins)
+date_format = workbook.add_format({'num_format': 'mm/dd/yy hh:mm'})
+#write data into file so it can be used
+print(wb40_hourly_sheet.cell_value(100, 0))
+for i in range(wb40_hourly_sheet.nrows):
+    if i > 3:
+        datasheet.write(i, 0, wb40_hourly_sheet.cell_value(i, 0), date_format)
+        datasheet.write(i, 1, float(wb40_hourly_sheet.cell_value(i, 1)))
+
+for j in range(wb45_hourly_sheet.nrows):
+    if j > 3  and wb45_hourly_sheet.cell_value(j, 0) != '':
+        datasheet.write(j, 3, wb45_hourly_sheet.cell_value(j, 0), date_format)
+        datasheet.write(j, 4, float(wb45_hourly_sheet.cell_value(j, 1)))
+
+for k in range(wb60_hourly_sheet.nrows):
+    if k > 3 and wb60_hourly_sheet.cell_value(k, 0) != '':
+        datasheet.write(k, 6, wb60_hourly_sheet.cell_value(k, 0), date_format)
+        datasheet.write(k, 7, wb60_hourly_sheet.cell_value(k, 1))
+#make line chart and add the data
+print("analysing data")
+chart = workbook.add_chart({'type' : 'line'})
+
+datasheet.set_column('A:A', 20)
+datasheet.set_column('D:D', 20)
+
+chart.add_series({
+    'categories': '=Sheet2!$A$4:$A$7650',
+    'values': '=Sheet2!$B$4:$B$7650',
+    'trendline' : {
+        'type': 'exponential',
+        'name': 'Avg Temp'},
+    'name': 'WC 40 Hourly'
+    })
+chart.add_series({
+    'values': '=Sheet2!$E$4:$E$7861',
+    'name': 'WC 45 Hourly',
+    #'categories': '=Sheet2!$D$4:$D$7861',
+    })
+chart.add_series({
+    'values': '=Sheet2!$H$4:$H$7862',
+    'name': 'WC 60 Hourly',
+    #'categories': 'Sheet2!$G$4:$G$7862'
+    })
+chart.set_x_axis({
+    'name': 'Temperature Over Time',
+    'date_axis': True,
+    'min': date(2020, 1, 1),
+    'max': date(2020, 11, 23)
+    })
+worksheet.insert_chart('A4', chart)
+print("DONE")
+workbook.close()
